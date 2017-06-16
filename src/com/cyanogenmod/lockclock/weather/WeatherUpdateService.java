@@ -35,6 +35,8 @@ import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.Log;
 
+import org.cyanogenmod.internal.util.PackageManagerUtils;
+
 import com.cyanogenmod.lockclock.ClockWidgetProvider;
 import com.cyanogenmod.lockclock.misc.Constants;
 import com.cyanogenmod.lockclock.misc.Preferences;
@@ -186,6 +188,11 @@ public class WeatherUpdateService extends Service {
                 String locationProvider = lm.getBestProvider(sLocationCriteria, true);
                 if (TextUtils.isEmpty(locationProvider)) {
                     Log.e(TAG, "No available location providers matching criteria.");
+                } else if (PackageManagerUtils.isAppInstalled(mContext, "com.google.android.gms")
+                        && locationProvider.equals(LocationManager.GPS_PROVIDER)) {
+                    // Since Google Play services is available,
+                    // let's conserve battery power and not depend on the device's GPS.
+                    Log.i(TAG, "Google Play Services available; Ignoring GPS provider.");
                 } else {
                     WeatherLocationListener.registerIfNeeded(mContext, locationProvider);
                 }
