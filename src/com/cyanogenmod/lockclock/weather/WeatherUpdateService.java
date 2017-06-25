@@ -21,6 +21,8 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
@@ -34,8 +36,6 @@ import android.os.PowerManager.WakeLock;
 import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.Log;
-
-import org.cyanogenmod.internal.util.PackageManagerUtils;
 
 import com.cyanogenmod.lockclock.ClockWidgetProvider;
 import com.cyanogenmod.lockclock.misc.Constants;
@@ -183,12 +183,19 @@ public class WeatherUpdateService extends Service {
                 long delta = System.currentTimeMillis() - location.getTime();
                 needsUpdate = delta > OUTDATED_LOCATION_THRESHOLD_MILLIS;
             }
+            final PackageManager packageManager = mContext.getPackageManager();
+            ApplicationInfo hasGMS;
+            try {
+                hasGMS = packageManager.getApplicationInfo("com.google.android.gms", 0);
+            } catch (PackageManager.NameNotFoundException e) {
+                hasGMS = null;
+            }
             if (needsUpdate) {
                 if (D) Log.d(TAG, "Getting best location provider");
                 String locationProvider = lm.getBestProvider(sLocationCriteria, true);
                 if (TextUtils.isEmpty(locationProvider)) {
                     Log.e(TAG, "No available location providers matching criteria.");
-                } else if (PackageManagerUtils.isAppInstalled(mContext, "com.google.android.gms")
+                } else if ((hasGMS != null)
                         && locationProvider.equals(LocationManager.GPS_PROVIDER)) {
                     // Since Google Play services is available,
                     // let's conserve battery power and not depend on the device's GPS.
